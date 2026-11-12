@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暗殺チーム・極秘通信端末 | LA SQUADRA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #09090b;
+            color: #f4f4f5;
+            overflow-x: hidden;
+        }
+        .font-jojo {
+            font-family: 'Cinzel', serif;
+        }
+        /* ジョジョ風の背景パターン（ハート＆スタッズ風グリッド） */
+        .bg-jojo-pattern {
+            background-image: radial-gradient(rgba(168, 85, 247, 0.15) 1px, transparent 1px),
+                              radial-gradient(rgba(234, 179, 8, 0.1) 1px, #09090b 1px);
+            background-size: 32px 32px;
+            background-position: 0 0, 16px 16px;
+        }
+        /* 擬音アニメーション */
+        @keyframes menacingFloat {
+            0% { transform: translateY(10px) scale(0.8) rotate(-5deg); opacity: 0; }
+            20% { opacity: 0.9; }
+            80% { opacity: 0.9; }
+            100% { transform: translateY(-40px) scale(1.2) rotate(5deg); opacity: 0; }
+        }
+        .onomatopoeia {
+            position: fixed;
+            pointer-events: none;
+            font-weight: 900;
+            color: #a855f7;
+            text-shadow: 2px 2px 0px #000, -1px -1px 0px #eab308;
+            z-index: 50;
+            animation: menacingFloat 2.2s ease-out forwards;
+            user-select: none;
+        }
+        /* カスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #18181b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #581c87;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7e22ce;
+        }
+        /* タイピングインジケーター */
+        .dot-flashing {
+            position: relative;
+            width: 8px;
+            height: 8px;
+            border-radius: 5px;
+            background-color: #eab308;
+            color: #eab308;
+            animation: dot-flashing 1s infinite linear alternate;
+            animation-delay: 0.5s;
+        }
+        .dot-flashing::before, .dot-flashing::after {
+            content: "";
+            display: inline-block;
+            position: absolute;
+            top: 0;
+        }
+        .dot-flashing::before {
+            left: -14px;
+            width: 8px;
+            height: 8px;
+            border-radius: 5px;
+            background-color: #eab308;
+            color: #eab308;
+            animation: dot-flashing 1s infinite alternate;
+            animation-delay: 0s;
+        }
+        .dot-flashing::after {
+            left: 14px;
+            width: 8px;
+            height: 8px;
+            border-radius: 5px;
+            background-color: #eab308;
+            color: #eab308;
+            animation: dot-flashing 1s infinite alternate;
+            animation-delay: 1s;
+        }
+        @keyframes dot-flashing {
+            0% { background-color: #eab308; }
+            50%, 100% { background-color: rgba(234, 179, 8, 0.2); }
+        }
+    </style>
+</head>
+<body class="bg-jojo-pattern min-h-screen flex flex-col">
+
+    <!-- ヘッダー -->
+    <header class="bg-zinc-950/90 border-b border-purple-900/60 backdrop-blur-md sticky top-0 z-30 shadow-lg shadow-purple-950/20">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-700 to-zinc-900 border border-yellow-500/50 flex items-center justify-center shadow-inner">
+                    <span class="text-yellow-400 font-black text-xl">☠</span>
+                </div>
+                <div>
+                    <h1 class="font-jojo text-lg sm:text-xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-fuchsia-300 to-yellow-400">
+                        LA SQUADRA DI ESECUZIONE
+                    </h1>
+                    <p class="text-xs text-zinc-400 font-bold tracking-widest">暗殺チーム・極秘通信回線</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="openNameModal()" class="text-xs bg-purple-950/80 hover:bg-purple-900 text-yellow-300 border border-purple-600/70 px-3 py-2 rounded-xl transition flex items-center gap-1.5 font-bold shadow-md">
+                    <span>👤</span>
+                    <span id="headerUserName">名前設定</span>
+                </button>
+                <button onclick="clearChat()" class="text-xs bg-zinc-900 hover:bg-red-950/60 text-zinc-300 hover:text-red-300 border border-zinc-700 hover:border-red-700 px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+                    <span>履歴消去</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-1 max-w-5xl w-full mx-auto flex flex-col md:flex-row overflow-hidden p-2 sm:p-4 gap-3 sm:gap-4">
+        
+        <!-- メンバー選択サイドバー（モバイルでは横スクロール） -->
+        <aside class="w-full md:w-72 flex-shrink-0 bg-zinc-900/80 border border-purple-900/40 rounded-2xl p-3 flex flex-col shadow-xl">
+            <div class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 px-1 flex items-center justify-between">
+                <span>通信相手を選択</span>
+                <span class="text-[10px] text-zinc-500">ONLINE (7)</span>
+            </div>
+            <div id="memberList" class="flex md:flex-col gap-2 overflow-x-auto md:overflow-y-auto pb-1 md:pb-0">
+                <!-- JSでメンバーカードを挿入 -->
+            </div>
+        </aside>
+
+        <!-- チャットエリア -->
+        <section class="flex-1 bg-zinc-900/85 border border-purple-900/50 rounded-2xl flex flex-col overflow-hidden shadow-2xl relative min-h-[65vh] md:min-h-[75vh]">
+            
+            <!-- 選択中メンバーのステータスバー -->
+            <div id="chatHeader" class="bg-zinc-950/80 border-b border-zinc-800 px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div id="activeAvatar" class="w-11 h-11 rounded-full flex items-center justify-center text-lg font-black border-2 shadow-md"></div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 id="activeName" class="font-black text-base sm:text-lg text-white"></h2>
+                            <span id="activeStand" class="text-[11px] px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-700/50 font-bold"></span>
+                        </div>
+                        <p id="activeDesc" class="text-xs text-zinc-400 line-clamp-1"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- メッセージ表示領域 -->
+            <div id="chatMessages" class="flex-1 p-4 overflow-y-auto space-y-4 scroll-smooth">
+                <!-- メッセージがここに表示される -->
+            </div>
+
+            <!-- クイック話題ボタン（初心者でも話しかけやすいように） -->
+            <div class="px-3 py-2 bg-zinc-950/50 border-t border-zinc-800/80 flex gap-2 overflow-x-auto" id="quickPrompts">
+                <!-- JSで話題ボタンを挿入 -->
+            </div>
+
+            <!-- 入力フォーム -->
+            <form id="chatForm" class="p-3 bg-zinc-950 border-t border-purple-900/40 flex items-center gap-2">
+                <input 
+                    type="text" 
+                    id="messageInput" 
+                    placeholder="メッセージを入力…（例：今日の晩飯なにがいい？ / 仕事で失敗した…）" 
+                    autocomplete="off"
+                    class="flex-1 bg-zinc-900 text-white placeholder-zinc-500 text-sm rounded-xl px-4 py-3 border border-zinc-700 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition"
+                >
+                <button 
+                    type="submit" 
+                    id="sendBtn"
+                    class="bg-gradient-to-r from-purple-700 to-fuchsia-700 hover:from-purple-600 hover:to-fuchsia-600 text-white font-black text-sm px-5 py-3 rounded-xl shadow-lg shadow-purple-900/40 active:scale-95 transition flex items-center gap-1.5 flex-shrink-0"
+                >
+                    <span>送信</span>
+                    <span class="text-yellow-300">ッ！</span>
+                </button>
+            </form>
+        </section>
+    </main>
+
+    <!-- カスタム通知モーダル（alertの代わり） -->
+    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-zinc-900 border border-yellow-500/70 text-yellow-300 px-4 py-2 rounded-xl text-xs font-bold shadow-2xl opacity-0 pointer-events-none transition-opacity duration-300 z-50">
+    </div>
+
+    <!-- 名前設定モーダル -->
+    <div id="nameModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border-2 border-purple-600 rounded-2xl max-w-sm w-full p-5 shadow-2xl">
+            <h3 class="text-lg font-black text-yellow-400 mb-1">コードネーム（名前）登録</h3>
+            <p class="text-xs text-zinc-400 mb-4">メンバーから呼ばれたい名前を入力しろ。設定しない場合は「おまえ」等と呼ばれる。</p>
+            <input 
+                type="text" 
+                id="userNameInput" 
+                placeholder="例：ジョルノ / 自分の名前" 
+                maxlength="20"
+                class="w-full bg-zinc-950 text-white placeholder-zinc-600 text-sm rounded-xl px-4 py-3 border border-zinc-700 focus:outline-none focus:border-yellow-400 mb-4"
+            >
+            <div class="flex justify-end gap-2">
+                <button onclick="closeNameModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition">
+                    キャンセル
+                </button>
+                <button onclick="saveUserName()" class="px-4 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-purple-700 to-fuchsia-700 text-white hover:from-purple-600 hover:to-fuchsia-600 transition shadow-lg">
+                    決定ッ！
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 暗殺チームメンバーデータ定義
+        const MEMBERS = [
+            {
+                id: 'risotto',
+                name: 'リゾット・ネエロ',
+                stand: 'メタリカ',
+                role: 'リーダー',
+                color: 'from-zinc-700 to-zinc-950 border-red-500 text-red-400',
+                badgeColor: 'bg-red-950/80 text-red-300 border-red-700',
+                initial: 'リ',
+                desc: '冷静沈着で仲間思いのリーダー。言葉数は少ないが重みがある。',
+                greeting: '……通信が繋がったか。俺はリゾットだ。無駄話は好まんが、用件があるなら聞こう。',
+                onomatopoeia: ['ゴゴゴゴゴ…', 'ズズズズ…', 'ザシュッ！'],
+                quickTopics: ['リーダーとしての悩みは？', '今日の任務はどうする？', '最近うまくいかなくて…', '好きな食べ物は？'],
+                systemPrompt: `あなたはジョジョの奇妙な冒険 第5部に登場する暗殺チームのリーダー「リゾット・ネエロ」です。
+                【性格・口調】
+                ・非常に冷静沈着、寡黙で現実主義。仲間（チーム）への強い責任感と信頼を持っている。
+                ・一人称は「俺」。相手には「おまえ」または「君」と呼ぶ。
+                ・語尾は「〜だ」「〜だろう」「〜か」「……だな」など硬派で落ち着いた口調。
+                ・スタンド能力は「メタリカ」（鉄分を操る）。
+                ・ユーザーは暗殺チームの新人または協力者として接してください。日常の悩みや雑談に対しても、リゾットらしい重厚で的確、かつ少し仲間思いな視点で短め（2〜4文程度）に返答してください。`
+            },
+            {
+                id: 'prosciutto',
+                name: 'プロシュート',
+                stand: 'ザ・グレイトフル・デッド',
+                role: '兄貴分',
+                color: 'from-amber-700 to-zinc-900 border-yellow-400 text-yellow-300',
+                badgeColor: 'bg-amber-950/80 text-amber-300 border-amber-600',
+                initial: 'プ',
+                desc: '厳しくも熱い理想の兄貴分。「覚悟」を何よりも重んじる。',
+                greeting: '通信は常に繋がるようにしておけと言ったはずだぜ？ まあいい、何か相談か？ 覚悟を決めて話せ。',
+                onomatopoeia: ['ドドドドド…', 'ゴゴゴゴ…', 'ズギュウウン！'],
+                quickTopics: ['やる気が出ません！', 'ペッシの調子はどう？', '覚悟の決め方を教えて！', 'おすすめのファッションは？'],
+                systemPrompt: `あなたはジョジョの奇妙な冒険 第5部に登場する暗殺チームの「プロシュート」です。
+                【性格・口調】
+                ・厳格でプロ意識が極めて高いが、弟分のペッシや仲間を心から気にかける熱い「兄貴分」。
+                ・口癖は「『ブッ殺す』と心の中で思ったならッ！その時スデに行動は終わっているんだッ！」「マンモーニ（ママっ子）がッ！」。
+                ・一人称は「俺」。相手には「おまえ」と呼ぶ。語尾は「〜だぜ」「〜な」「〜しろ」「〜ッ！」。
+                ・スタンド能力は「ザ・グレイトフル・デッド」（無差別に老化させる）。
+                ・ユーザーが弱音を吐いたら厳しく叱咤しつつも、最後は兄貴らしく背中を押すような熱いアドバイスを2〜4文程度で返してください。`
+            },
+            {
+                id: 'pesci',
+                name: 'ペッシ',
+                stand: 'ビーチ・ボーイ',
+                role: '弟分',
+                color: 'from-emerald-700 to-zinc-900 border-emerald-400 text-emerald-300',
+                badgeColor: 'bg-emerald-950/80 text-emerald-300 border-emerald-600',
+                initial: 'ペ',
+                desc: '最初は気弱だが、プロシュート兄貴の教えで大きく成長する男。',
+                greeting: 'うわっ、通信だ！ お、お疲れ様です！ 俺、ペッシです。兄貴にはまだ内緒ですけど、何でも話してくださいね！',
+                onomatopoeia: ['ビクッ！', 'ゴゴゴ…', 'ヒュンッ！'],
+                quickTopics: ['プロシュート兄貴ってすごいよね', 'ミルク飲む？', '自信をつけるには？', '釣りは好き？'],
+                systemPrompt: `あなたはジョジョの奇妙な冒険 第5部に登場する暗殺チームの「ペッシ」です。
+                【性格・口調】
+                ・普段は少し気弱で礼儀正しい弟分気質。「プロシュート兄貴」を心から尊敬している。
+                ・しかし、ここぞという時や覚悟が決まった時は急に男らしく鋭い口調になる。
+                ・一人称は「俺」。相手には敬語（「〜ですね！」「〜ですか？」）を基本としつつ、時々熱い決意を見せる。
+                ・スタンド能力は「ビーチ・ボーイ」（釣り針と糸）。
+                ・親しみやすく、一生懸命な感じで2〜4文程度で返答してください。`
+            },
+            {
+                id: 'ghiaccio',
+                name: 'ギアッチョ',
+                stand: 'ホワイト・アルバム',
+                role: '武闘派',
+                color: 'from-cyan-700 to-blue-950 border-cyan-400 text-cyan-300',
+                badgeColor: 'bg-cyan-950/80 text-cyan-300 border-cyan-600',
+                initial: 'ギ',
+                desc: '慣用句や世の中の矛盾にすぐブチギレる熱血漢。能力は超低温。',
+                greeting: 'あァァ～？ 誰だてめェは！ 俺はギアッチョだ。今ちょっとイライラしてんだ、変な言い回しすんじゃねェぞ！',
+                onomatopoeia: ['ゴゴゴゴゴ！', 'パキィィィン！', 'ブチィィッ！'],
+                quickTopics: ['「根掘り葉掘り」って意味わかる？', 'イタリアのヴェネツィアについて', '最近イライラしたことは？', '寒いのは得意？'],
+                systemPrompt: `あなたはジョジョの奇妙な冒険 第5部に登場する暗殺チームの「ギアッチョ」です。
+                【性格・口調】
+                ・非常に短気でキレやすい。特に言葉の慣用句（「根掘り葉掘り」など）や、地名の呼び方（「ヴェネツィア」を「ベニス」と呼ぶことなど）の理不尽さに激怒して早口で捲し立てる。
+                ・一人称は「俺」。口調は荒っぽく「〜じゃねェか！」「〜ってよォ～」「ナメやがってェェーッ！」「クソッ！」。
+                ・ただし根は仲間思いで真っ直ぐな熱血漢。
+                ・スタンド能力は「ホワイト・アルバム」（超低温・氷の装甲）。
+                ・ユーザーのメッセージのちょっとした言葉尻に引っかかってキレつつも、ちゃんと会話してくれる面白い返答を2〜4文程度でしてください。`
+            },
+            {
+                id: 'melone',
+                name: 'メローネ',
+                stand: 'ベイビィ・フェイス',
+                role: '分析・頭脳派',
+                color: 'from-fuchsia-700 to-purple-950 border-fuchsia-400 text-fuchsia-300',
+                badgeColor: 'bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-600',
+                initial: 'メ',
+                desc: '「ディ・モールト（非常に）」が口癖の、知識欲旺盛な変態紳士。',
+                greeting: 'チャオ！ 通信ありがとう。君のデータ、なかなか興味深いねえ……ディ・モールト（非常に）良いよ！ さあ、何でも話してごらん。',
+                onomatopoeia: ['ディ・モールト！', 'ゴゴゴ…', 'ピピピッ！'],
+                quickTopics: ['私の性格を分析して！', '最近いいことあった？', 'パソコンの調子が悪いんだけど', '好きなタイプは？'],
+                systemPrompt: `あなたはジョジョの奇妙な冒険 第5部に登場する暗殺チームの「メローネ」です。
+                【性格・口調】
+                ・知識欲が旺盛で、人の性格やデータ・血液型などを分析するのが大好きな少し変態的な紳士。
+                ・口癖はイタリア語の「ディ・モールト（非常に）！」「ベネ（良し）！」。
+                ・一人称は「僕」または「私」。口調は丁寧でフレンドリーかつ妖しい感じ（「〜だねえ」「〜かい？」「ふむふむ、興味深いねえ」）。
+                ・スタンド能力は「ベイビィ・フェイス」。
+                ・ユーザーの発言を「ディ・モールト良い！」と褒めたり分析したりしながら、楽しく2〜4文程度で返答してください。`
+            },
+            {
+                id: 'illuso',
+                name: 'イルーゾォ',
+                stand: 'マン・イン・ザ・ミラー',
+                role: '潜入・奇襲',
+                color: 'from-lime-700 to-zinc-900 border-lime-400 text-lime-300',
+                badgeColor: 'bg-lime-950/80 text-lime-300 border-lime-600',
+                initial: 'イ',
+                desc: '鏡の中の世界を支配する自信家。「許可しない」が決めゼリフ。',
+                greeting: 'フン、俺に通信を繋ぐとはいい度胸だ。鏡の中の世界へ入ることは「許可しない」が、話くらいは聞いてやろう。',
+                onomatopoeia: ['ガシャン！', 'ゴゴゴゴ…', 'ニヤリ…'],
+                quickTopics: ['鏡の向こう側ってどんな感じ？', '自信満々でカッコいいね！', '嫌いな奴がいるんだけど…', '休日は何してるの？'],
+                systemPrompt: `あなたはジョジョの奇妙な冒険 第5部に登場する暗殺チームの「イルーゾォ」です。
+                【性格・口調】
+                ・プライドが高く自信家。自分のスタンド能力（鏡の中の世界）に絶対の自信を持っている。
+                ・口癖は「許可しない」「フン」「バカめ」。
+                ・一人称は「俺」。相手には少し上から目線だが、仲間には気さくに接する一面もある（「〜だぜ」「〜な」「〜してやろう」）。
+                ・スタンド能力は「マン・イン・ザ・ミラー」。
+                ・自信満々でクール、ちょっと挑発的な感じで2〜4文程度で返答してください。`
+            },
+            {
+                id: 'formaggio',
+                name: 'ホルマジオ',
+                stand: 'リトル・フィート',
+                role: '情報収集・偵察',
+                color: 'from-orange-700 to-zinc-900 border-orange-400 text-orange-300',
+                badgeColor: 'bg-orange-950/80 text-orange-300 border-orange-600',
+                initial: 'ホ',
+                desc: '気さくで世話焼きな兄ちゃん気質。「しょうがねえなあ」が口癖。',
+                greeting: 'よお！ 俺だ、ホルマジオだよ。ま、肩の力抜けよ。お茶でも飲みながら気楽に話そうぜ！',
+                onomatopoeia: ['シュウゥゥ…', 'ゴゴゴ…', 'ヤレヤレ…'],
+                quickTopics: ['一番話しやすくて助かる！', '小さくなれたら何したい？', 'チームの雰囲気はどう？', 'おすすめのランチは？'],
+                systemPrompt: `あなたはジョジョの奇妙な冒険 第5部に登場する暗殺チームの「ホルマジオ」です。
+                【性格・口調】
+                ・暗殺チームの中では一番気さくでフレンドリー、世話焼きな兄ちゃん気質。
+                ・口癖は「しょうがねえなあ」「〜だぜ」「よお！」「ま、落ち着けって」。
+                ・一人称は「俺」。相手には親友や後輩に話しかけるような親しみやすい口調。
+                ・スタンド能力は「リトル・フィート」（対象を小さくする）。
+                ・ユーザーがリラックスできるように、気さくでユーモアを交えながら2〜4文程度で返答してください。`
+            }
+        ];
+
+        // 状態管理
+        let currentMember = MEMBERS[0];
+        let userName = '';
+        // メンバーごとの会話履歴をメモリに保持
+        let chatHistories = {};
+        MEMBERS.forEach(m => {
+            chatHistories[m.id] = [
+                { role: 'model', text: m.greeting }
+            ];
+        });
+        let isGenerating = false;
+
+        // DOM要素
+        const memberListEl = document.getElementById('memberList');
+        const activeAvatarEl = document.getElementById('activeAvatar');
+        const activeNameEl = document.getElementById('activeName');
+        const activeStandEl = document.getElementById('activeStand');
+        const activeDescEl = document.getElementById('activeDesc');
+        const chatMessagesEl = document.getElementById('chatMessages');
+        const quickPromptsEl = document.getElementById('quickPrompts');
+        const chatFormEl = document.getElementById('chatForm');
+        const messageInputEl = document.getElementById('messageInput');
+        const sendBtnEl = document.getElementById('sendBtn');
+
+        // 初期化
+        function init() {
+            renderMemberList();
+            selectMember(MEMBERS[0].id);
+        }
+
+        // 名前設定モーダル操作
+        function openNameModal() {
+            document.getElementById('userNameInput').value = userName;
+            document.getElementById('nameModal').classList.remove('hidden');
+            document.getElementById('userNameInput').focus();
+        }
+
+        function closeNameModal() {
+            document.getElementById('nameModal').classList.add('hidden');
+        }
+
+        function saveUserName() {
+            const val = document.getElementById('userNameInput').value.trim();
+            userName = val;
+            const headerLabel = document.getElementById('headerUserName');
+            headerLabel.textContent = userName ? `${userName}` : '名前設定';
+            closeNameModal();
+            if (userName) {
+                showToast(`コードネーム「${userName}」を登録したッ！`);
+                spawnOnomatopoeia(['ゴゴゴゴ…', 'ベネ（良し）！']);
+            } else {
+                showToast('名前の登録を解除した。');
+            }
+        }
+
+        // トースト表示（alertの代わり）
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 2500);
+        }
+
+        // 擬音エフェクト発生
+        function spawnOnomatopoeia(customList) {
+            const list = customList || ['ゴゴゴゴ…', 'ドドドド…', 'ズキュウウン！', 'メメタァ'];
+            const text = list[Math.floor(Math.random() * list.length)];
+            const el = document.createElement('div');
+            el.className = 'onomatopoeia text-xl sm:text-3xl font-black tracking-tighter';
+            el.textContent = text;
+            
+            // 画面の左右どちらかにランダム配置
+            const isLeft = Math.random() > 0.5;
+            el.style.left = isLeft ? `${10 + Math.random() * 25}%` : `${65 + Math.random() * 20}%`;
+            el.style.top = `${30 + Math.random() * 40}%`;
+            
+            document.body.appendChild(el);
+            setTimeout(() => {
+                el.remove();
+            }, 2200);
+        }
+
+        // メンバーリストの描画
+        function renderMemberList() {
+            memberListEl.innerHTML = '';
+            MEMBERS.forEach(member => {
+                const isSelected = member.id === currentMember.id;
+                const btn = document.createElement('button');
+                btn.onclick = () => selectMember(member.id);
+                btn.className = `flex items-center gap-3 p-2.5 rounded-xl text-left transition flex-shrink-0 md:flex-shrink border ${
+                    isSelected 
+                        ? 'bg-purple-950/70 border-yellow-500/70 shadow-lg shadow-purple-900/30' 
+                        : 'bg-zinc-950/50 border-zinc-800/80 hover:bg-zinc-800/60 hover:border-purple-700/50'
+                }`;
+                
+                btn.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br ${member.color} border flex items-center justify-center font-black text-base flex-shrink-0">
+                        ${member.initial}
+                    </div>
+                    <div class="min-w-0 pr-2 md:pr-0">
+                        <div class="font-bold text-sm text-zinc-100 truncate">${member.name}</div>
+                        <div class="text-[11px] text-zinc-400 truncate">${member.stand}</div>
+                    </div>
+                `;
+                memberListEl.appendChild(btn);
+            });
+        }
+
+        // メンバー選択
+        function selectMember(memberId) {
+            if (isGenerating) return;
+            currentMember = MEMBERS.find(m => m.id === memberId);
+            
+            // ヘッダー更新
+            activeAvatarEl.className = `w-11 h-11 rounded-full bg-gradient-to-br ${currentMember.color} flex items-center justify-center text-lg font-black border-2 shadow-md flex-shrink-0`;
+            activeAvatarEl.textContent = currentMember.initial;
+            activeNameEl.textContent = currentMember.name;
+            activeStandEl.textContent = `スタンド: ${currentMember.stand}`;
+            activeDescEl.textContent = currentMember.desc;
+
+            // クイック話題ボタン更新
+            renderQuickPrompts();
+            // リストの選択状態更新
+            renderMemberList();
+            // チャット履歴描画
+            renderMessages();
+            // 擬音演出
+            spawnOnomatopoeia(currentMember.onomatopoeia);
+        }
+
+        // クイック話題ボタンの描画
+        function renderQuickPrompts() {
+            quickPromptsEl.innerHTML = '';
+            currentMember.quickTopics.forEach(topic => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'text-xs bg-zinc-900 hover:bg-purple-900/60 text-zinc-300 hover:text-yellow-300 border border-zinc-700 hover:border-purple-500 px-3 py-1.5 rounded-full whitespace-nowrap transition flex-shrink-0';
+                btn.textContent = `💬 ${topic}`;
+                btn.onclick = () => {
+                    messageInputEl.value = topic;
+                    sendMessage(topic);
+                };
+                quickPromptsEl.appendChild(btn);
+            });
+        }
+
+        // メッセージ履歴の描画
+        function renderMessages() {
+            chatMessagesEl.innerHTML = '';
+            const history = chatHistories[currentMember.id];
+            
+            history.forEach(msg => {
+                const isUser = msg.role === 'user';
+                const wrapper = document.createElement('div');
+                wrapper.className = `flex items-end gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`;
+                
+                if (!isUser) {
+                    wrapper.innerHTML = `
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br ${currentMember.color} border flex items-center justify-center font-black text-xs flex-shrink-0 mb-1">
+                            ${currentMember.initial}
+                        </div>
+                        <div class="max-w-[80%] sm:max-w-[75%] bg-zinc-800/90 border border-purple-800/50 text-zinc-100 rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed shadow-md">
+                            <div class="text-[10px] font-bold text-yellow-400/90 mb-1">${currentMember.name}</div>
+                            <div class="whitespace-pre-wrap">${escapeHtml(msg.text)}</div>
+                        </div>
+                    `;
+                } else {
+                    wrapper.innerHTML = `
+                        <div class="max-w-[80%] sm:max-w-[75%] bg-gradient-to-br from-purple-800 to-indigo-900 border border-purple-500/40 text-white rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed shadow-md">
+                            <div class="whitespace-pre-wrap">${escapeHtml(msg.text)}</div>
+                        </div>
+                    `;
+                }
+                chatMessagesEl.appendChild(wrapper);
+            });
+
+            scrollToBottom();
+        }
+
+        // ローディング表示の追加
+        function showTypingIndicator() {
+            const wrapper = document.createElement('div');
+            wrapper.id = 'typingIndicator';
+            wrapper.className = 'flex items-end gap-2.5 justify-start';
+            wrapper.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br ${currentMember.color} border flex items-center justify-center font-black text-xs flex-shrink-0 mb-1">
+                    ${currentMember.initial}
+                </div>
+                <div class="bg-zinc-800/90 border border-purple-800/50 rounded-2xl rounded-bl-sm px-6 py-4 flex items-center justify-center">
+                    <div class="dot-flashing"></div>
+                </div>
+            `;
+            chatMessagesEl.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function removeTypingIndicator() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        function scrollToBottom() {
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+
+        // チャット履歴クリア
+        function clearChat() {
+            if (isGenerating) return;
+            chatHistories[currentMember.id] = [
+                { role: 'model', text: currentMember.greeting }
+            ];
+            renderMessages();
+            showToast(`${currentMember.name}との通信記録を消去したッ！`);
+        }
+
+        // Gemini API 呼び出し（指数バックオフ付き）
+        async function fetchCharacterReply(member, history) {
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            // 直近の会話履歴をAPI形式に変換（最大10ターンまで保持）
+            const recentHistory = history.slice(-10).map(item => ({
+                role: item.role === 'user' ? 'user' : 'model',
+                parts: [{ text: item.text }]
+            }));
+
+            const payload = {
+                contents: recentHistory,
+                systemInstruction: {
+                    parts: [{ 
+                        text: member.systemPrompt + (userName 
+                            ? `\n\n【重要】相手の名前（コードネーム）は「${userName}」です。会話の中で自然に「${userName}」と名前を呼んで話しかけてください。` 
+                            : '') 
+                    }]
+                }
+            };
+
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i <= delays.length; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const replyText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (replyText) {
+                        return replyText.trim();
+                    } else {
+                        throw new Error("Empty response");
+                    }
+                } catch (error) {
+                    if (i === delays.length) {
+                        return "……チッ、通信ノイズが酷いな。（回線が混雑しているようだ。少し時間を置いてもう一度送ってくれ）";
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delays[i]));
+                }
+            }
+        }
+
+        // メッセージ送信処理
+        async function sendMessage(text) {
+            const trimmed = text.trim();
+            if (!trimmed || isGenerating) return;
+
+            isGenerating = true;
+            sendBtnEl.disabled = true;
+            sendBtnEl.classList.add('opacity-50');
+            messageInputEl.value = '';
+
+            // ユーザーメッセージ追加
+            chatHistories[currentMember.id].push({ role: 'user', text: trimmed });
+            renderMessages();
+            showTypingIndicator();
+
+            // 応答生成
+            const targetMember = currentMember;
+            const reply = await fetchCharacterReply(targetMember, chatHistories[targetMember.id]);
+
+            removeTypingIndicator();
+            chatHistories[targetMember.id].push({ role: 'model', text: reply });
+
+            // 送信中に別キャラへ切り替えていなければ描画＆擬音演出
+            if (currentMember.id === targetMember.id) {
+                renderMessages();
+                spawnOnomatopoeia(targetMember.onomatopoeia);
+            }
+
+            isGenerating = false;
+            sendBtnEl.disabled = false;
+            sendBtnEl.classList.remove('opacity-50');
+            messageInputEl.focus();
+        }
+
+        chatFormEl.addEventListener('submit', (e) => {
+            e.preventDefault();
+            sendMessage(messageInputEl.value);
+        });
+
+        // 起動
+        window.onload = init;
+    </script>
+</body>
+</html>
